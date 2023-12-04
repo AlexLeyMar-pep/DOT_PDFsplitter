@@ -10,6 +10,7 @@ import PyPDF2
 from PIL import Image
 import easyocr
 import torch
+import warnings
 
 
 def try2():
@@ -23,6 +24,7 @@ def try2():
         if filename.endswith('.pdf'):
             start = time.time()
             with open(os.path.join(path_docs, filename)) as file:
+                found_flag = False
                 #Creating folder
                 gpid = str((file.name).split('\\')[-1].split(".")[0])
                 folder = create_folder(gpid)
@@ -38,17 +40,51 @@ def try2():
                 print("\n"+path, "<----")
                 for i in range(len(pdf.pages)):
                     page = pdf.pages[i].page_number
-                    temp_img_path = "Page " + str(page-1) + " in " + path.split('\\')[-1] + ".jpg"
+                    temp_img_path = "Page " + str(page+1) + " in " + path.split('\\')[-1] + ".jpg"
                     image = images[int(page)]
                     image.save(temp_img_path)
                     print(page, end=" ")
                     time.sleep(.85)
                     if opencv(temp_img_path) is True:
+                        found_flag = True
                         absolute_path = str(folder) + "\\" + "driver_license.jpg"
                         image.save(absolute_path)
                         matches += 1
-                        print("Match in page " + str(page-1) + " in " + path.split('\\')[-1])
+                        print("Match in page " + str(page+1) + " in " + path.split('\\')[-1])
                         break
+
+                #RE RUN PDF USING TORCH
+                if not found_flag:
+                    print("\nStarting torch")
+                    for i in range(len(pdf.pages)):
+                        page = pdf.pages[i].page_number
+                        temp_img_path = "Page " + str(page + 1) + " in " + path.split('\\')[-1] + ".jpg"
+                        image = images[int(page)]
+                        image.save(temp_img_path)
+                        #print(page, end=" ")
+                        time.sleep(.85)
+                        matches = ["CDL", "ILLNOIS", "ILLINOIS", "Secretary of State", "ILUNOIS"]
+                        text = recognize_text_torch(temp_img_path)
+                        warnings.filterwarnings('default')
+                        #print(len(text))
+                        if len(text) > 80:
+                            os.remove(temp_img_path)
+                        for word in matches:
+                            if word in text:
+                                #img = cv2.imread(temp_img_path)
+                                #show_image(img)
+                                print("FACE FOUND!")
+                                print("Match in page " + str(page + 1) + " in " + path.split('\\')[-1])
+                                found_flag = True
+                                os.remove(temp_img_path)
+                                break
+                        if found_flag:
+                            absolute_path = str(folder) + "\\" + "driver_license.jpg"
+                            image.save(absolute_path)
+                            os.remove(temp_img_path)
+                            break
+
+
 
             end = time.time()
             print("Time:", round(end-start, 2), "seconds")
@@ -79,8 +115,23 @@ def opencv(path):
             os.remove(path)
             return False
 
+        #DETECT TEXT WITH OCR
+        target = ["403", "DT"]
+
+
+        text = recognize_text_OCR(path)
+        #print(type(text))
+        #print(text)
+        for i in target:
+            if i in text:
+                print("False postive", end= ' ')
+                #show_image(img)
+                os.remove(path)
+                return False
+
+
         #show_image(img)
-        print(face.shape, face_alt.shape, face_alt_2.shape)
+        #print(face.shape, face_alt.shape, face_alt_2.shape)
         print("\nFACE FOUND!")
         os.remove(path)
         return True
@@ -134,22 +185,6 @@ def test(path):
     print(face_alt_2.shape)
     print("face: " + str(face.shape))
 
-
-    '''
-    try:
-        print("\nface_alt2: " + str(face_alt_2.shape))
-    except:
-        try:
-            print("\nface_alt: " + str(face_alt.shape))
-        except:
-            pass
-    finally:
-        try:
-            print("face: " + str(face.shape))
-        except:
-            pass
-    '''
-
     show_image(img)
 
 
@@ -169,22 +204,21 @@ def use_classifier(img, gray_image,classifier_name):
 
     return object
 
-def recognize_text_torch(path_):
+def recognize_text_torch(path): #RECEIVES IMG
     #OCR
     reader = easyocr.Reader(['en'])
-    result = reader.readtext(path_, detail=0)
+    result = reader.readtext(path, detail=0)
     return result #Array
 
-def recognize_text_OCR(path):
+def recognize_text_OCR(path): #RECEIVES IMG
     text = str(((pytesseract.image_to_string((Image.open(path))))))
-    print(text) #String
-    return text
+    return text #String
 
 def main():
     #opencv(r"C:\Users\80943848\PycharmProjects\DOT_PDFsplitter\Page_41.jpg")
     #test(r"C:\Users\80943848\Downloads\uld3.jpg")
-    #try2()
-    recognize_text(r"C:\Users\80943848\Downloads\uld.jpg")
+    try2()
+    #recognize_text_torch(r"C:\Users\80943848\Downloads\uld.jpg")
 
 
 main()
