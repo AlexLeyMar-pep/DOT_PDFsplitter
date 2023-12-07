@@ -13,7 +13,7 @@ import torch
 import warnings
 
 
-def try2():
+def get_drivers_license():
     path_docs = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Test Files"
     #path_docs = r"C:\Users\80943848\Downloads\Undetected_faces"
 
@@ -44,7 +44,9 @@ def try2():
                     image = images[int(page)]
                     image.save(temp_img_path)
                     print(page, end=" ")
-                    time.sleep(.85)
+                    time.sleep(.75)
+
+
                     if opencv(temp_img_path) is True:
                         found_flag = True
                         absolute_path = str(folder) + "\\" + "driver_license.jpg"
@@ -61,30 +63,33 @@ def try2():
                         temp_img_path = "Page " + str(page + 1) + " in " + path.split('\\')[-1] + ".jpg"
                         image = images[int(page)]
                         image.save(temp_img_path)
-                        #print(page, end=" ")
-                        time.sleep(.85)
-                        matches = ["CDL", "ILLNOIS", "ILLINOIS", "Secretary of State", "ILUNOIS"]
+                        print(page, end=" ")
+                        time.sleep(.75)
+                        pool = ["CDL", "ILLNOIS", "ILLINOIS", "Secretary of State", "ILUNOIS"]
                         text = recognize_text_torch(temp_img_path)
                         warnings.filterwarnings('default')
                         #print(len(text))
                         if len(text) > 80:
                             os.remove(temp_img_path)
-                        for word in matches:
+                            continue
+                        for word in pool:
                             if word in text:
                                 #img = cv2.imread(temp_img_path)
                                 #show_image(img)
+                                matches += 1
                                 print("FACE FOUND!")
-                                print("Match in page " + str(page + 1) + " in " + path.split('\\')[-1])
+                                #print("Match in page " + str(page + 1) + " in " + path.split('\\')[-1])
                                 found_flag = True
                                 os.remove(temp_img_path)
                                 break
                         if found_flag:
                             absolute_path = str(folder) + "\\" + "driver_license.jpg"
                             image.save(absolute_path)
-                            os.remove(temp_img_path)
                             break
-
-
+                        else:
+                            os.remove(temp_img_path)
+                else:
+                    pass
 
             end = time.time()
             print("Time:", round(end-start, 2), "seconds")
@@ -92,6 +97,54 @@ def try2():
     print(str(matches), "matches out of", str(files), "files")
     print(str(round((matches/files)*100, 2)), "accuracy")
 
+
+def get_medcards():
+    path_docs = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Test Files"
+    #path_docs = r"C:\Users\80943848\Downloads\md_test"
+
+    files = 0
+
+    for filename in os.listdir(path_docs):
+        if filename.endswith('.pdf'):
+            start = time.time()
+            with open(os.path.join(path_docs, filename)) as file:
+                found_flag = False
+                # Creating folder
+                #gpid = str((file.name).split('\\')[-1].split(".")[0])
+                files += 1
+                # Reading PDF
+                path = file.name
+                pdf = pypdf.PdfReader(open(path, "rb"))
+                try:
+                    images = convert_from_path(path)
+                except Exception as e:
+                    print(e)
+                    pass
+                print("\n" + path, "<----")
+                for i in range(len(pdf.pages)):
+                    page = pdf.pages[i].page_number
+                    temp_img_path = "Page " + str(page + 1) + " in " + path.split('\\')[-1] + ".jpg"
+                    image = images[int(page)]
+                    image.save(temp_img_path)
+                    #print(page, end=" ")
+                    time.sleep(.75)
+
+                    text = recognize_text_OCR(temp_img_path)
+
+                    if "Medical Examiner's Certificate" in text and "6." not in text:
+                        print("OCR match in page", page)
+                        break
+                    else:
+                        os.remove(temp_img_path)
+                    '''
+                    if "Medical Examiner's Certificate" in recognize_text_torch(temp_img_path):
+                        matches_torch += 1
+                        print("torch match in page", page)
+                    '''
+                    #print(recognize_text_OCR(temp_img_path))
+                    #print(recognize_text_torch(temp_img_path))
+            end = time.time()
+            print("Time:", round(end - start, 2), "seconds")
 
 
 def opencv(path):
@@ -168,6 +221,7 @@ def create_folder(name):
 
 
 def test(path):
+    '''
     img = cv2.imread(path)
 
     gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -186,6 +240,10 @@ def test(path):
     print("face: " + str(face.shape))
 
     show_image(img)
+    '''
+
+    print(recognize_text_torch(path))
+    print(recognize_text_OCR(path))
 
 
 
@@ -217,8 +275,8 @@ def recognize_text_OCR(path): #RECEIVES IMG
 def main():
     #opencv(r"C:\Users\80943848\PycharmProjects\DOT_PDFsplitter\Page_41.jpg")
     #test(r"C:\Users\80943848\Downloads\uld3.jpg")
-    try2()
-    #recognize_text_torch(r"C:\Users\80943848\Downloads\uld.jpg")
+    #get_drivers_license()
+    get_medcards()
 
 
 main()
