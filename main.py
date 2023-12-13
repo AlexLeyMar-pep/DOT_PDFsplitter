@@ -12,6 +12,8 @@ import easyocr
 import torch
 import warnings
 
+page_numbers = {}
+
 
 def get_drivers_license():
     path_docs = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Test Files"
@@ -27,6 +29,7 @@ def get_drivers_license():
                 found_flag = False
                 #Creating folder
                 gpid = str((file.name).split('\\')[-1].split(".")[0])
+                page_numbers[str(gpid)] = '0'
                 folder = create_folder(gpid)
                 files += 1
                 #Reading PDF
@@ -43,11 +46,11 @@ def get_drivers_license():
                     temp_img_path = "Page " + str(page+1) + " in " + path.split('\\')[-1] + ".jpg"
                     image = images[int(page)]
                     image.save(temp_img_path)
-                    print(page, end=" ")
+                    #print(page, end=" ")
                     time.sleep(.75)
 
-
                     if opencv(temp_img_path) is True:
+                        page_numbers[str(gpid)] = str(page)
                         found_flag = True
                         absolute_path = str(folder) + "\\" + "driver_license.jpg"
                         image.save(absolute_path)
@@ -63,7 +66,7 @@ def get_drivers_license():
                         temp_img_path = "Page " + str(page + 1) + " in " + path.split('\\')[-1] + ".jpg"
                         image = images[int(page)]
                         image.save(temp_img_path)
-                        print(page, end=" ")
+                        #print(page, end=" ")
                         time.sleep(.75)
                         pool = ["CDL", "ILLNOIS", "ILLINOIS", "Secretary of State", "ILUNOIS"]
                         text = recognize_text_torch(temp_img_path)
@@ -77,9 +80,10 @@ def get_drivers_license():
                                 #img = cv2.imread(temp_img_path)
                                 #show_image(img)
                                 matches += 1
+                                found_flag = True
+                                page_numbers[str(gpid)] = str(page)
                                 print("FACE FOUND!")
                                 #print("Match in page " + str(page + 1) + " in " + path.split('\\')[-1])
-                                found_flag = True
                                 os.remove(temp_img_path)
                                 break
                         if found_flag:
@@ -98,6 +102,7 @@ def get_drivers_license():
     print(str(round((matches/files)*100, 2)), "accuracy")
 
 
+#MEDCARDS ALWAYS AFTER DL
 def get_medcards():
     path_docs = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Test Files"
     #path_docs = r"C:\Users\80943848\Downloads\md_test"
@@ -109,8 +114,7 @@ def get_medcards():
             start = time.time()
             with open(os.path.join(path_docs, filename)) as file:
                 found_flag = False
-                # Creating folder
-                #gpid = str((file.name).split('\\')[-1].split(".")[0])
+                gpid = str((file.name).split('\\')[-1].split(".")[0])
                 files += 1
                 # Reading PDF
                 path = file.name
@@ -121,28 +125,73 @@ def get_medcards():
                     print(e)
                     pass
                 print("\n" + path, "<----")
-                for i in range(len(pdf.pages)):
+
+                #dl_page = page_numbers[gpid]
+                dl_page = 0
+
+                for i in range(int(dl_page), len(pdf.pages)):
                     page = pdf.pages[i].page_number
-                    temp_img_path = "Page " + str(page + 1) + " in " + path.split('\\')[-1] + ".jpg"
+                    temp_img_path = "Page " + str(page) + " in " + path.split('\\')[-1] + ".jpg"
                     image = images[int(page)]
                     image.save(temp_img_path)
                     #print(page, end=" ")
-                    time.sleep(.75)
+                    time.sleep(.85)
 
                     text = recognize_text_OCR(temp_img_path)
+                    #print(text)
+                    #print(recognize_text_torch(temp_img_path))
 
-                    if "Medical Examiner's Certificate" in text and "6." not in text:
-                        print("OCR match in page", page)
+                    matches = ["Form MCSA-5876", "MCSA-5876", "Public Burden Statement", "Medical Examiner's Certificate",
+                               "Medical Examiner's", "Medical Examiners Certificate", "Medical Examiner'"]
+
+                    for match in matches:
+                        if match.lower() in text.lower():
+                            #print(match)
+                            print("OCR match in page", page)
+                            found_flag = True
+                            os.remove(temp_img_path)
+                            absolute_path = str(gpid) + "\\" + "medcard.jpg"
+                            image.save(absolute_path)
+                            break
+
+                    if found_flag:
                         break
                     else:
                         os.remove(temp_img_path)
-                    '''
-                    if "Medical Examiner's Certificate" in recognize_text_torch(temp_img_path):
-                        matches_torch += 1
-                        print("torch match in page", page)
-                    '''
-                    #print(recognize_text_OCR(temp_img_path))
-                    #print(recognize_text_torch(temp_img_path))
+
+                #TORCH
+                if not found_flag:
+                    for i in range(len(pdf.pages)):
+                        page = pdf.pages[i].page_number
+                        temp_img_path = "Page " + str(page) + " in " + path.split('\\')[-1] + ".jpg"
+                        image = images[int(page)]
+                        image.save(temp_img_path)
+                        # print(page, end=" ")
+                        time.sleep(.85)
+
+                        text = recognize_text_torch(temp_img_path)
+
+                        matches = ["MCSA-5876", "Public Burden Statement",
+                                   "Medical Examiner's Certificate",
+                                   "Medical Examiner's", "Medical Examiners Certificate", "Medical Examiners Telephone Number"]
+
+                        for match in matches:
+                            if match in text:
+                                #print(match)
+                                #print("OCR match in page", page)
+                                found_flag = True
+                                absolute_path = str(gpid) + "\\" + "medcard.jpg"
+                                image.save(absolute_path)
+                                #os.remove(temp_img_path)
+                                break
+
+                        if found_flag:
+                            break
+                        else:
+                            os.remove(temp_img_path)
+                else:
+                    pass
+
             end = time.time()
             print("Time:", round(end - start, 2), "seconds")
 
