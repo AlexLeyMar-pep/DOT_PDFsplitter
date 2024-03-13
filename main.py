@@ -16,7 +16,7 @@ page_numbers = {}
 
 
 def get_drivers_license():
-    path_docs = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Test Files"
+    path_docs = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Files for Alex\11032023-060047343_PepsiCo_Delivery-Specialists"
     #path_docs = r"C:\Users\80943848\Downloads\Undetected_faces"
 
     files = 0
@@ -104,7 +104,7 @@ def get_drivers_license():
 
 #MEDCARDS ALWAYS AFTER DL
 def get_medcards():
-    path_docs = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Test Files"
+    path_docs = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Files for Alex\11032023-060047343_PepsiCo_Delivery-Specialists"
     #path_docs = r"C:\Users\80943848\Downloads\md_test"
 
     files = 0
@@ -150,7 +150,9 @@ def get_medcards():
                             print("OCR match in page", page)
                             found_flag = True
                             os.remove(temp_img_path)
-                            absolute_path = str(gpid) + "\\" + "medcard.jpg"
+                            absolute_path = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Files for Alex\ProcessedFiles\\" + str(
+                                gpid) + "\\" + "medcard.jpg"
+                            print("---->" + absolute_path)
                             image.save(absolute_path)
                             break
 
@@ -180,7 +182,7 @@ def get_medcards():
                                 #print(match)
                                 #print("OCR match in page", page)
                                 found_flag = True
-                                absolute_path = str(gpid) + "\\" + "medcard.jpg"
+                                absolute_path = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Files for Alex\ProcessedFiles\\" + str(gpid) + "\\" + "medcard.jpg"
                                 image.save(absolute_path)
                                 #os.remove(temp_img_path)
                                 break
@@ -257,7 +259,7 @@ def create_folder(name):
     directory = str(name)
 
     # Parent Directory path
-    parent_dir = r"C:\Users\80943848\PycharmProjects\DOT_PDFsplitter"
+    parent_dir = r"C:\Users\80943848\Pepsico\PFNA HR Strategy, Staffing, Technology & Transformation - Kelmar Files for Alex\ProcessedFiles"
 
     # Path
     path = os.path.join(parent_dir, directory)
@@ -324,7 +326,7 @@ def recognize_text_OCR(path): #RECEIVES IMG
 def main():
     #opencv(r"C:\Users\80943848\PycharmProjects\DOT_PDFsplitter\Page_41.jpg")
     #test(r"C:\Users\80943848\Downloads\uld3.jpg")
-    #get_drivers_license()
+    get_drivers_license()
     get_medcards()
 
 
